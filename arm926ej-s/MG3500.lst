@@ -1,0 +1,1849 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;/******************************************************
+                       ***********************/
+    2 00000000         ;/*                                                     
+                                             */
+    3 00000000         ;/******************************************************
+                       ***********************/
+    4 00000000         ;/* <<< Use Configuration Wizard in Context Menu >>>    
+                                             */
+    5 00000000         ;/******************************************************
+                       ***********************/
+    6 00000000         ;/* This file is part of the uVision/ARM development too
+                       ls.                   */
+    7 00000000         ;/* Copyright (c) 2005-2007 Keil Software. All rights re
+                       served.               */
+    8 00000000         ;/* This software may only be used under the terms of a 
+                       valid, current,       */
+    9 00000000         ;/* end user licence from KEIL for a compatible version 
+                       of KEIL software      */
+   10 00000000         ;/* development tools. Nothing else gives you the right 
+                       to use this software. */
+   11 00000000         ;/******************************************************
+                       ***********************/
+   12 00000000         
+   13 00000000         
+   14 00000000         ; Standard definitions of Mode bits and Interrupt (I & F
+                       ) flags in PSRs
+   15 00000000         
+   16 00000000 00000010 
+                       Mode_USR
+                               EQU              0x10
+   17 00000000 00000011 
+                       Mode_FIQ
+                               EQU              0x11
+   18 00000000 00000012 
+                       Mode_IRQ
+                               EQU              0x12
+   19 00000000 00000013 
+                       Mode_SVC
+                               EQU              0x13
+   20 00000000 00000017 
+                       Mode_ABT
+                               EQU              0x17
+   21 00000000 0000001B 
+                       Mode_UND
+                               EQU              0x1B
+   22 00000000 0000001F 
+                       Mode_SYS
+                               EQU              0x1F
+   23 00000000         
+   24 00000000 00000080 
+                       I_Bit   EQU              0x80        ; when I bit is set
+                                                            , IRQ is disabled
+   25 00000000 00000040 
+                       F_Bit   EQU              0x40        ; when F bit is set
+                                                            , FIQ is disabled
+   26 00000000         
+   27 00000000         
+   28 00000000         ;// <h> Stack Configuration (Stack Sizes in Bytes)
+   29 00000000         ;//   <o0> Undefined Mode      <0x0-0xFFFFFFFF:8>
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   30 00000000         ;//   <o1> Supervisor Mode     <0x0-0xFFFFFFFF:8>
+   31 00000000         ;//   <o2> Abort Mode          <0x0-0xFFFFFFFF:8>
+   32 00000000         ;//   <o3> Fast Interrupt Mode <0x0-0xFFFFFFFF:8>
+   33 00000000         ;//   <o4> Interrupt Mode      <0x0-0xFFFFFFFF:8>
+   34 00000000         ;//   <o5> User/System Mode    <0x0-0xFFFFFFFF:8>
+   35 00000000         ;// </h>
+   36 00000000         
+   37 00000000 00000000 
+                       UND_Stack_Size
+                               EQU              0x00000000
+   38 00000000 00000008 
+                       SVC_Stack_Size
+                               EQU              0x00000008
+   39 00000000 00000000 
+                       ABT_Stack_Size
+                               EQU              0x00000000
+   40 00000000 00000000 
+                       FIQ_Stack_Size
+                               EQU              0x00000000
+   41 00000000 00000100 
+                       IRQ_Stack_Size
+                               EQU              0x00000100
+   42 00000000 00000400 
+                       USR_Stack_Size
+                               EQU              0x00000400
+   43 00000000         
+   45 00000000 00000108 
+                       ISR_Stack_Size
+                               EQU              (UND_Stack_Size + SVC_Stack_Siz
+e + ABT_Stack_Size +                           FIQ_Stack_Size + IRQ_Stack_Size
+)
+   46 00000000         
+   47 00000000                 AREA             STACK, NOINIT, READWRITE, ALIGN
+=3
+   48 00000000         
+   49 00000000         Stack_Mem
+                               SPACE            USR_Stack_Size
+   50 00000400         __initial_sp
+                               SPACE            ISR_Stack_Size
+   51 00000508         Stack_Top
+   52 00000508         
+   53 00000508         
+   54 00000508         ;// <h> Heap Configuration
+   55 00000508         ;//   <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF>
+   56 00000508         ;// </h>
+   57 00000508         
+   58 00000508 00000000 
+                       Heap_Size
+                               EQU              0x00000000
+   59 00000508         
+   60 00000508                 AREA             HEAP, NOINIT, READWRITE, ALIGN=
+3
+   61 00000000         __heap_base
+   62 00000000         Heap_Mem
+                               SPACE            Heap_Size
+   63 00000000         __heap_limit
+   64 00000000         
+   65 00000000         
+   66 00000000         ;// <e0> System Configuration
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   67 00000000         ;//   <h> System Configuration (SCU_SCR0)
+   68 00000000         ;//     <o1.3..4> SRAM_SIZE: SRAM Size
+   69 00000000         ;//       <i> Default: 32KB
+   70 00000000         ;//                     <0=> 32KB
+   71 00000000         ;//                     <1=> 64KB
+   72 00000000         ;//                     <2=> 96KB
+   73 00000000         ;//     <o1.0> EN_PFQBC: PFQBC Unit Enable
+   74 00000000         ;//     <o1.1> WSR_DTCM: DTCM Wait State Enable
+   75 00000000         ;//     <o1.2> WSR_AHB:  AHB Wait State Enable
+   76 00000000         ;//   </h>
+   77 00000000         ;// </e0>
+   78 00000000 00000000 
+                       SCR0_SETUP
+                               EQU              0
+   79 00000000 00000196 
+                       SCU_SCR0_Val
+                               EQU              0x00000196
+   80 00000000         
+   81 00000000         
+   82 00000000         ; Flash Memory Interface (FMI) definitions (Flash banks 
+                       sizes and addresses)
+   83 00000000 54000000 
+                       FMI_BASE
+                               EQU              0x54000000  ; FMI Base Address 
+                                                            (non-buffered)
+   84 00000000 00000000 
+                       FMI_BBSR_OFS
+                               EQU              0x00        ; Boot Bank Size Re
+                                                            gister
+   85 00000000 00000004 
+                       FMI_NBBSR_OFS
+                               EQU              0x04        ; Non-boot Bank Siz
+                                                            e Register
+   86 00000000 0000000C 
+                       FMI_BBADR_OFS
+                               EQU              0x0C        ; Boot Bank Base Ad
+                                                            dress Register
+   87 00000000 00000010 
+                       FMI_NBBADR_OFS
+                               EQU              0x10        ; Non-boot Bank Bas
+                                                            e Address Register
+   88 00000000 00000018 
+                       FMI_CR_OFS
+                               EQU              0x18        ; Control Register
+   89 00000000         
+   90 00000000         ;// <e0> Flash Memory Interface (FMI)
+   91 00000000         ;//   <e1.3> Flash Bank 0 Enable
+   92 00000000         ;//   <h> Boot Bank Size Configuration (BBSR)
+   93 00000000         ;//     <o2.0..3>  BBSIZE: Memory size 
+   94 00000000         ;//       <i> Default 32KB
+   95 00000000         ;//                     <0=>   32KB
+   96 00000000         ;//                     <1=>   64KB
+   97 00000000         ;//                     <2=>  128KB
+   98 00000000         ;//                     <3=>  256KB
+   99 00000000         ;//                     <4=>  512KB
+  100 00000000         ;//                     <5=>    1MB
+  101 00000000         ;//                     <6=>    2MB
+  102 00000000         ;//                     <7=>    4MB
+  103 00000000         ;//                     <8=>    8MB
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  104 00000000         ;//                     <9=>   16MB
+  105 00000000         ;//                     <10=>  32MB
+  106 00000000         ;//                     <11=>  64MB
+  107 00000000         ;//   </h>
+  108 00000000         ;//   <h> Boot Bank Base Address Configuration (BBADR)
+  109 00000000         ;//     <o3.0..23> BBADDR: Address <0x0-0xFFFFFF>
+  110 00000000         ;//       <i> Default: 0x000000
+  111 00000000         ;//   </h>
+  112 00000000         ;//   </e>
+  113 00000000         ;//   <e1.4> Flash Bank 1 Enable
+  114 00000000         ;//   <h> Non-boot Bank Size Configuration (NBBSR)
+  115 00000000         ;//     <o4.0..3>  NBBSIZE: Memory size 
+  116 00000000         ;//       <i> Default 8KB
+  117 00000000         ;//                     <0=>    8KB
+  118 00000000         ;//                     <1=>   16KB
+  119 00000000         ;//                     <2=>   32KB
+  120 00000000         ;//                     <3=>   64KB
+  121 00000000         ;//                     <4=>  128KB
+  122 00000000         ;//                     <5=>  256KB
+  123 00000000         ;//                     <6=>  512KB
+  124 00000000         ;//                     <7=>    1MB
+  125 00000000         ;//                     <8=>    2MB
+  126 00000000         ;//                     <9=>    4MB
+  127 00000000         ;//                     <10=>   8MB
+  128 00000000         ;//                     <11=>  16MB
+  129 00000000         ;//                     <12=>  32MB
+  130 00000000         ;//                     <13=>  64MB
+  131 00000000         ;//   </h>
+  132 00000000         ;//   <h> Boot Bank Base Address Configuration (NBBADR)
+  133 00000000         ;//     <o5.0..23> NBBADDR: Address <0x0-0xFFFFFF>
+  134 00000000         ;//       <i> Default: 0x000000
+  135 00000000         ;//   </h>
+  136 00000000         ;//   </e>
+  137 00000000         ;//   <o6.11..12> WSTATES: Wait states
+  138 00000000         ;//     <i> 1 wait state is required for FMI bus clock f
+                       requency of < 66 MHz
+  139 00000000         ;//     <i> 2 wait states are required for FMI bus clock
+                        frequency of 75 MHz
+  140 00000000         ;//     <i> 3 wait states are required for maximum FMI b
+                       us clock frequency
+  141 00000000         ;//     <i> Default: 1 Wait state
+  142 00000000         ;//                     <0=> 1 Wait state 
+  143 00000000         ;//                     <1=> 2 Wait states
+  144 00000000         ;//                     <2=> 3 Wait states
+  145 00000000         ;//   <o6.10> PWD: Power-down configuration    
+  146 00000000         ;//     <i> Default: Enabled 
+  147 00000000         ;//                     <0=> Disabled  
+  148 00000000         ;//                     <1=> Enabled
+  149 00000000         ;//   <o6.9> LVDEN: Low Voltage Detector enable
+  150 00000000         ;//     <i> Default: Enabled 
+  151 00000000         ;//                     <0=> Enabled   
+  152 00000000         ;//                     <1=> Disabled
+  153 00000000         ;//   <o6.4> BUSCFG: Flash bus clock configuration
+  154 00000000         ;//     <i> Used for configuration of bus frequencies gr
+                       ater than 66 MHz    
+  155 00000000         ;//     <i> Default: Low frequency bus clock
+  156 00000000         ;//                     <0=> Low frequency bus clock
+  157 00000000         ;//                     <1=> Bus clock speed > 66 Mhz
+  158 00000000         ;// </e0> End of FMI
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  159 00000000 00000000 
+                       FMI_SETUP
+                               EQU              0
+  160 00000000 00000018 
+                       FMI_CR_Val
+                               EQU              0x00000018
+  161 00000000 00000004 
+                       FMI_BBSR_Val
+                               EQU              0x00000004
+  162 00000000 00000000 
+                       FMI_BBADR_Val
+                               EQU              0x00000000
+  163 00000000 00000002 
+                       FMI_NBBSR_Val
+                               EQU              0x00000002
+  164 00000000 00400000 
+                       FMI_NBBADR_Val
+                               EQU              0x00400000
+  165 00000000 00000000 
+                       FLASH_CFG_Val
+                               EQU              0x00000000
+  166 00000000         
+  167 00000000         
+  168 00000000         ; System Control Unit (SCU) definitions
+  169 00000000 5C002000 
+                       SCU_BASE
+                               EQU              0x5C002000  ; SCU Base Address 
+                                                            (non-buffered)
+  170 00000000 00000000 
+                       SCU_CLKCNTR_OFS
+                               EQU              0x00        ; Clock Control reg
+                                                            ister Offset
+  171 00000000 00000004 
+                       SCU_PLLCONF_OFS
+                               EQU              0x04        ; PLL Configuration
+                                                             register Offset
+  172 00000000 00000008 
+                       SCU_SYSSTAT_OFS
+                               EQU              0x08        ; System Status Reg
+                                                            ister Offset
+  173 00000000 00000014 
+                       SCU_PCGR0_OFS
+                               EQU              0x14        ; Peripheral Clock 
+                                                            Gating Register 0 O
+                                                            ffset
+  174 00000000 00000018 
+                       SCU_PCGR1_OFS
+                               EQU              0x18        ; Peripheral Clock 
+                                                            Gating Register 1 O
+                                                            ffset
+  175 00000000 0000001C 
+                       SCU_PRR0_OFS
+                               EQU              0x1C        ; Peripheral Reset 
+                                                            Register        0 O
+                                                            ffset
+  176 00000000 00000020 
+                       SCU_PRR1_OFS
+                               EQU              0x20        ; Peripheral Reset 
+                                                            Register        1 O
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+                                                            ffset
+  177 00000000 00000034 
+                       SCU_SCR0_OFS
+                               EQU              0x34        ; System Configurat
+                                                            ion Register 0 Offs
+                                                            et
+  178 00000000         
+  179 00000000         ; Constants
+  180 00000000 00000001 
+                       SYSSTAT_LOCK
+                               EQU              0x01        ; PLL Lock Status
+  181 00000000         
+  182 00000000         ;// <e0> Clock Configuration
+  183 00000000         ;//   <h> Clock Control Register Configuration (SCU_CLKC
+                       NTR)
+  184 00000000         ;//     <o1.17..18> EMIRATIO: External Memory Interface 
+                       Ratio  
+  185 00000000         ;//       <i> Default: fBCLK=HCLK/2
+  186 00000000         ;//                     <0=> fBCLK=HCLK  
+  187 00000000         ;//                     <1=> fBCLK=HCLK/2
+  188 00000000         ;//     <o1.16> FMISEL: Flash Memory Interface Clock Div
+                       ider   
+  189 00000000         ;//       <i> Default: FMICLK=RCLK
+  190 00000000         ;//                     <0=> FMICLK=RCLK
+  191 00000000         ;//                     <1=> FMICLK=RCLK/2
+  192 00000000         ;//     <o1.14> TIM23SEL: Timers 2 and 3 Clock Selection
+                       
+  193 00000000         ;//       <i> Default: Master Clock divided by prescaler
+                        PRSC_TIM23+1
+  194 00000000         ;//                     <0=> Master Clock divided by pre
+                       scaler PRSC_TIM23+1
+  195 00000000         ;//                     <1=> External Clock from EXTCLK_
+                       T2T3 pin GPIO P2.5
+  196 00000000         ;//     <o1.13> TIM01SEL: Timers 0 and 1 Clock Selection
+                       
+  197 00000000         ;//       <i> Default: Master Clock divided by prescaler
+                        PRSC_TIM01+1
+  198 00000000         ;//                     <0=> Master Clock divided by pre
+                       scaler PRSC_TIM01+1
+  199 00000000         ;//                     <1=> External Clock from EXTCLK_
+                       T0T1 pin GPIO P2.4
+  200 00000000         ;//     <o1.12> PHYSEL: MII_PHYCLK Enable
+  201 00000000         ;//       <i> Default: MII_PHYCLK output disabled
+  202 00000000         ;//                     <0=> MII_PHYCLK output disabled
+  203 00000000         ;//                     <1=> Fosc output on MII_PHYCLK p
+                       in GPIO P5.2
+  204 00000000         ;//     <o1.10..11> USBSEL: USB 48 MHz Clock Selection  
+                              
+  205 00000000         ;//       <i> Default: fMSTR
+  206 00000000         ;//                     <0=> fMSTR
+  207 00000000         ;//                     <1=> fMSTR/2
+  208 00000000         ;//                     <2=> External Clock from USB_CLK
+                       48M pin GPIO P2.7
+  209 00000000         ;//     <o1.9> BRSEL: Baud Rate Clock Selection
+  210 00000000         ;//       <i> Default: fMSTR/2
+  211 00000000         ;//                     <0=> fMSTR/2
+  212 00000000         ;//                     <1=> fMSTR
+  213 00000000         ;//     <o1.7..8> APBDIV: PCLK Divider
+  214 00000000         ;//       <i> Default: PCLK=RCLK
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  215 00000000         ;//                     <0=> PCLK=RCLK
+  216 00000000         ;//                     <1=> PCLK=RCLK/2    
+  217 00000000         ;//                     <2=> PCLK=RCLK/4    
+  218 00000000         ;//                     <3=> PCLK=RCLK/8
+  219 00000000         ;//     <o1.5..6> AHBDIV: HCLK Divider 
+  220 00000000         ;//       <i> Default: HCLK=RCLK
+  221 00000000         ;//                     <0=> HCLK=RCLK
+  222 00000000         ;//                     <1=> HCLK=RCLK/2 
+  223 00000000         ;//                     <2=> HCLK=RCLK/4 
+  224 00000000         ;//     <o1.2..4> RCLKDIV: RCLK Divider 
+  225 00000000         ;//       <i> Default: RCLK=fMSTR
+  226 00000000         ;//                     <0=> RCLK=fMSTR
+  227 00000000         ;//                     <1=> RCLK=fMSTR/2
+  228 00000000         ;//                     <2=> RCLK=fMSTR/4
+  229 00000000         ;//                     <3=> RCLK=fMSTR/8
+  230 00000000         ;//                     <4=> RCLK=fMSTR/16
+  231 00000000         ;//                     <5=> RCLK=fMSTR/1024
+  232 00000000         ;//     <o1.0..1> MCLKSEL: Main Clock Source
+  233 00000000         ;//       <i> Default: fMSTR=fOSC
+  234 00000000         ;//                     <0=> fMSTR=fPLL
+  235 00000000         ;//                     <1=> fMSTR=fRTC
+  236 00000000         ;//                     <2=> fMSTR=fOSC
+  237 00000000         ;//   </h>
+  238 00000000         ;//   <h> PLL Configuration Register Configuration (SCU_
+                       PLLCONF)
+  239 00000000         ;//     <i> fPLL = (2 * PLL_NDIV * fOSC) / (PLL_MDIV * (
+                       2 ^ PLL_PDIV))
+  240 00000000         ;//     <o2.19> PLLEN: PLL Enable
+  241 00000000         ;//       <i> Default: PLL Disabled
+  242 00000000         ;//                     <0=> PLL Disabled
+  243 00000000         ;//                     <1=> PLL Enabled
+  244 00000000         ;//     <o2.16..18> PLL_PDIV: PLL Post-divider <0-5>
+  245 00000000         ;//       <i>  Default: 0
+  246 00000000         ;//     <o2.8..15> PLL_NDIV: PLL Feedback divider <1-255
+                       >
+  247 00000000         ;//       <i>  Default: 24
+  248 00000000         ;//     <o2.0..7> PLL_MDIV: PLL Pre-divider <1-255>
+  249 00000000         ;//       <i>  Default: 25
+  250 00000000         ;//   </h>
+  251 00000000         ;//   <h> Peripheral Clock Gating Register 0 Configurati
+                       on (SCU_PCGR0)
+  252 00000000         ;//     <o3.11> MAC: Ethernet peripheral clock gating
+  253 00000000         ;//       <i> Default: Stopped
+  254 00000000         ;//     <o3.10> USB48M : USB 48 MHz clock gating
+  255 00000000         ;//       <i> Default: Stopped
+  256 00000000         ;//     <o3.9>  USB : USB peripheral clock gating
+  257 00000000         ;//       <i> Default: Stopped
+  258 00000000         ;//     <o3.8>  DMA : DMA peripheral clock gating
+  259 00000000         ;//       <i> Default: Stopped
+  260 00000000         ;//     <o3.7>  EXT_MEM_CLK : External memory clock gati
+                       ng
+  261 00000000         ;//       <i> Default: Running
+  262 00000000         ;//     <o3.6>  EMI : EMI peripheral clock gating
+  263 00000000         ;//       <i> Default: Running
+  264 00000000         ;//     <o3.5>  VIC : VIC peripheral clock gating
+  265 00000000         ;//       <i> Default: Stopped
+  266 00000000         ;//     <o3.4>  SRAM_ARBITER : SRAM arbiter clock gating
+                       
+  267 00000000         ;//       <i> Default: Running
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+  268 00000000         ;//     <o3.3>  SRAM : SRAM clock gating
+  269 00000000         ;//       <i> Default: Running
+  270 00000000         ;//     <o3.1>  PQFBC : PQFBC clock gating
+  271 00000000         ;//       <i> Default: Running
+  272 00000000         ;//     <o3.0>  FMI : FMI clock gating
+  273 00000000         ;//       <i> Default: Running
+  274 00000000         ;//   </h>
+  275 00000000         ;//   <h> Peripheral Clock Gating Register 1 Configurati
+                       on (SCU_PCGR1)
+  276 00000000         ;//     <o4.24> RTC: RTC clock gating
+  277 00000000         ;//       <i> Default: Stopped
+  278 00000000         ;//     <o4.23> GPIO9: GPIO9 Port clock gating
+  279 00000000         ;//       <i> Default: Stopped
+  280 00000000         ;//     <o4.22> GPIO8: GPIO8 Port clock gating
+  281 00000000         ;//       <i> Default: Stopped
+  282 00000000         ;//     <o4.21> GPIO7: GPIO7 Port clock gating
+  283 00000000         ;//       <i> Default: Stopped
+  284 00000000         ;//     <o4.20> GPIO6: GPIO6 Port clock gating
+  285 00000000         ;//       <i> Default: Stopped
+  286 00000000         ;//     <o4.19> GPIO5: GPIO5 Port clock gating
+  287 00000000         ;//       <i> Default: Stopped
+  288 00000000         ;//     <o4.18> GPIO4: GPIO4 Port clock gating
+  289 00000000         ;//       <i> Default: Stopped
+  290 00000000         ;//     <o4.17> GPIO3: GPIO3 Port clock gating
+  291 00000000         ;//       <i> Default: Stopped
+  292 00000000         ;//     <o4.16> GPIO2: GPIO2 Port clock gating
+  293 00000000         ;//       <i> Default: Stopped
+  294 00000000         ;//     <o4.15> GPIO1: GPIO1 Port clock gating
+  295 00000000         ;//       <i> Default: Stopped
+  296 00000000         ;//     <o4.14> GPIO0: GPIO0 Port clock gating
+  297 00000000         ;//       <i> Default: Stopped
+  298 00000000         ;//     <o4.13> WIU: WIU peripheral clock gating
+  299 00000000         ;//       <i> Default: Stopped
+  300 00000000         ;//     <o4.12> WDG: WDG peripheral clock gating
+  301 00000000         ;//       <i> Default: Stopped
+  302 00000000         ;//     <o4.11> ADC: ADC clock gating
+  303 00000000         ;//       <i> Default: Stopped
+  304 00000000         ;//     <o4.10> CAN: CAN clock gating
+  305 00000000         ;//       <i> Default: Stopped
+  306 00000000         ;//     <o4.9>  SSP1: SSP1 peripheral clock gating
+  307 00000000         ;//       <i> Default: Stopped
+  308 00000000         ;//     <o4.8>  SSP0: SSP0 peripheral clock gating
+  309 00000000         ;//       <i> Default: Stopped
+  310 00000000         ;//     <o4.7>  I2C1: I2C1 peripheral clock gating
+  311 00000000         ;//       <i> Default: Stopped
+  312 00000000         ;//     <o4.6>  I2C0: I2C0 peripheral clock gating
+  313 00000000         ;//       <i> Default: Stopped
+  314 00000000         ;//     <o4.5>  UART2: UART2 peripheral clock gating
+  315 00000000         ;//       <i> Default: Stopped
+  316 00000000         ;//     <o4.4>  UART1: UART1 peripheral clock gating
+  317 00000000         ;//       <i> Default: Stopped
+  318 00000000         ;//     <o4.3>  UART0: UART0 peripheral clock gating
+  319 00000000         ;//       <i> Default: Stopped
+  320 00000000         ;//     <o4.2>  MC: Motor Control peripheral clock gatin
+                       g
+  321 00000000         ;//       <i> Default: Stopped
+  322 00000000         ;//     <o4.1>  TIM23: Timers 2 and 3 clock gating
+  323 00000000         ;//       <i> Default: Stopped
+  324 00000000         ;//     <o4.0>  TIM01: Timers 0 and 1 clock gating
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+  325 00000000         ;//       <i> Default: Stopped
+  326 00000000         ;//   </h>
+  327 00000000         ;// </e1> End of Clock Configuration
+  328 00000000 00000000 
+                       CLOCK_SETUP
+                               EQU              0
+  329 00000000 00020000 
+                       SCU_CLKCNTR_Val
+                               EQU              0x00020000
+  330 00000000 000BC019 
+                       SCU_PLLCONF_Val
+                               EQU              0x000BC019
+  331 00000000 000000DB 
+                       SCU_PCGR0_Val
+                               EQU              0x000000DB
+  332 00000000 00C40800 
+                       SCU_PCGR1_Val
+                               EQU              0x00C40800
+  333 00000000         
+  334 00000000         
+  335 00000000         ;// <e0> Peripheral Reset Configuration
+  336 00000000         ;//   <h> Peripheral Reset Register 0 Configuration (SCU
+                       _PRR0)
+  337 00000000         ;//     <o1.12>   RST_PFQBC_AHB: PFQBC AHB Reset
+  338 00000000         ;//       <0=> In reset <1=> Not in reset
+  339 00000000         ;//       <i> Default: Not in reset
+  340 00000000         ;//     <o1.11>         RST_MAC: Ethernet peripheral res
+                       et
+  341 00000000         ;//       <0=> In reset <1=> Not in reset
+  342 00000000         ;//       <i> Default: In reset
+  343 00000000         ;//     <o1.9>          RST_USB: USB peripheral reset
+  344 00000000         ;//       <0=> In reset <1=> Not in reset
+  345 00000000         ;//       <i> Default: In reset
+  346 00000000         ;//     <o1.8>          RST_DMA: DMA peripheral reset
+  347 00000000         ;//       <0=> In reset <1=> Not in reset
+  348 00000000         ;//       <i> Default: In reset
+  349 00000000         ;//     <o1.6>          RST_EMI: EMI peripheral reset
+  350 00000000         ;//       <0=> In reset <1=> Not in reset
+  351 00000000         ;//       <i> Default: Not in reset
+  352 00000000         ;//     <o1.5>          RST_VIC: VIC peripheral reset
+  353 00000000         ;//       <0=> In reset <1=> Not in reset
+  354 00000000         ;//       <i> Default: In reset
+  355 00000000         ;//     <o1.4> RST_SRAM_ARBITER: SRAM arbiter reset
+  356 00000000         ;//       <0=> In reset <1=> Not in reset
+  357 00000000         ;//       <i> Default: Not in reset
+  358 00000000         ;//     <o1.1>        RST_PQFBC: PQFBC reset
+  359 00000000         ;//       <0=> In reset <1=> Not in reset
+  360 00000000         ;//       <i> Default: Not in reset
+  361 00000000         ;//     <o1.0>          RST_FMI: FMI reset
+  362 00000000         ;//       <0=> In reset <1=> Not in reset
+  363 00000000         ;//       <i> Default: Not in reset
+  364 00000000         ;//   </h>
+  365 00000000         ;//   <h> Peripheral Reset Register 1 Configuration (SCU
+                       _PRR1)
+  366 00000000         ;//     <o2.24>         RST_RTC: RTC reset
+  367 00000000         ;//       <0=> In reset <1=> Not in reset
+  368 00000000         ;//       <i> Default: In reset
+  369 00000000         ;//     <o2.23>       RST_GPIO9: GPIO9 Port reset
+  370 00000000         ;//       <0=> In reset <1=> Not in reset
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+  371 00000000         ;//       <i> Default: In reset
+  372 00000000         ;//     <o2.22>       RST_GPIO8: GPIO8 Port reset
+  373 00000000         ;//       <0=> In reset <1=> Not in reset
+  374 00000000         ;//       <i> Default: In reset
+  375 00000000         ;//     <o2.21>       RST_GPIO7: GPIO7 Port reset
+  376 00000000         ;//       <0=> In reset <1=> Not in reset
+  377 00000000         ;//       <i> Default: In reset
+  378 00000000         ;//     <o2.20>       RST_GPIO6: GPIO6 Port reset
+  379 00000000         ;//       <0=> In reset <1=> Not in reset
+  380 00000000         ;//       <i> Default: In reset
+  381 00000000         ;//     <o2.19>       RST_GPIO5: GPIO5 Port reset
+  382 00000000         ;//       <0=> In reset <1=> Not in reset
+  383 00000000         ;//       <i> Default: In reset
+  384 00000000         ;//     <o2.18>       RST_GPIO4: GPIO4 Port reset
+  385 00000000         ;//       <0=> In reset <1=> Not in reset
+  386 00000000         ;//       <i> Default: In reset
+  387 00000000         ;//     <o2.17>       RST_GPIO3: GPIO3 Port reset
+  388 00000000         ;//       <0=> In reset <1=> Not in reset
+  389 00000000         ;//       <i> Default: In reset
+  390 00000000         ;//     <o2.16>       RST_GPIO2: GPIO2 Port reset
+  391 00000000         ;//       <0=> In reset <1=> Not in reset
+  392 00000000         ;//       <i> Default: In reset
+  393 00000000         ;//     <o2.15>       RST_GPIO1: GPIO1 Port reset
+  394 00000000         ;//       <0=> In reset <1=> Not in reset
+  395 00000000         ;//       <i> Default: In reset
+  396 00000000         ;//     <o2.14>       RST_GPIO0: GPIO0 Port reset
+  397 00000000         ;//       <0=> In reset <1=> Not in reset
+  398 00000000         ;//       <i> Default: In reset
+  399 00000000         ;//     <o2.13>         RST_WIU: WIU peripheral reset
+  400 00000000         ;//       <0=> In reset <1=> Not in reset
+  401 00000000         ;//       <i> Default: In reset
+  402 00000000         ;//     <o2.12>         RST_WDG: WDG peripheral reset
+  403 00000000         ;//       <0=> In reset <1=> Not in reset
+  404 00000000         ;//       <i> Default: In reset
+  405 00000000         ;//     <o2.11>         RST_ADC: ADC reset
+  406 00000000         ;//       <0=> In reset <1=> Not in reset
+  407 00000000         ;//       <i> Default: In reset
+  408 00000000         ;//     <o2.10>         RST_CAN: CAN peripheral reset
+  409 00000000         ;//       <0=> In reset <1=> Not in reset
+  410 00000000         ;//       <i> Default: In reset
+  411 00000000         ;//     <o2.9>         RST_SSP1: SSP1 peripheral reset
+  412 00000000         ;//       <0=> In reset <1=> Not in reset
+  413 00000000         ;//       <i> Default: In reset
+  414 00000000         ;//     <o2.8>         RST_SSP0: SSP0 peripheral reset
+  415 00000000         ;//       <0=> In reset <1=> Not in reset
+  416 00000000         ;//       <i> Default: In reset
+  417 00000000         ;//     <o2.7>         RST_I2C1: I2C1 peripheral reset
+  418 00000000         ;//       <0=> In reset <1=> Not in reset
+  419 00000000         ;//       <i> Default: In reset
+  420 00000000         ;//     <o2.6>         RST_I2C0: I2C0 peripheral reset
+  421 00000000         ;//       <0=> In reset <1=> Not in reset
+  422 00000000         ;//       <i> Default: In reset
+  423 00000000         ;//     <o2.5>        RST_UART2: UART2 peripheral reset
+  424 00000000         ;//       <0=> In reset <1=> Not in reset
+  425 00000000         ;//       <i> Default: In reset
+  426 00000000         ;//     <o2.4>        RST_UART1: UART1 peripheral reset
+  427 00000000         ;//       <0=> In reset <1=> Not in reset
+  428 00000000         ;//       <i> Default: In reset
+  429 00000000         ;//     <o2.3>        RST_UART0: UART0 peripheral reset
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  430 00000000         ;//       <0=> In reset <1=> Not in reset
+  431 00000000         ;//       <i> Default: In reset
+  432 00000000         ;//     <o2.2>           RST_MC: Motor Control periphera
+                       l reset
+  433 00000000         ;//       <0=> In reset <1=> Not in reset
+  434 00000000         ;//       <i> Default: In reset
+  435 00000000         ;//     <o2.1>        RST_TIM23: Timers 2 and 3 reset
+  436 00000000         ;//       <0=> In reset <1=> Not in reset
+  437 00000000         ;//       <i> Default: In reset
+  438 00000000         ;//     <o2.0>        RST_TIM01: Timers 0 and 1 reset
+  439 00000000         ;//       <0=> In reset <1=> Not in reset
+  440 00000000         ;//       <i> Default: In reset
+  441 00000000         ;//   </h>
+  442 00000000         ;// </e1> End of Clock Configuration
+  443 00000000 00000000 
+                       P_RESET_SETUP
+                               EQU              0
+  444 00000000 00001073 
+                       SCU_PRR0_Val
+                               EQU              0x00001073
+  445 00000000 00C40800 
+                       SCU_PRR1_Val
+                               EQU              0x00C40800
+  446 00000000         
+  447 00000000         
+  448 00000000         ; APB Bridge 1 & 2 definitions (Peripherals)
+  449 00000000 48001802 
+                       APB0_BUF_BASE
+                               EQU              0x48001802  ; APB Bridge 0 Buff
+                                                            ered Base Address
+  450 00000000 58000000 
+                       APB0_NBUF_BASE
+                               EQU              0x58000000  ; APB Bridge 0 Non-
+                                                            buffered Base Addre
+                                                            ss
+  451 00000000 4C000000 
+                       APB1_BUF_BASE
+                               EQU              0x4C000000  ; APB Bridge 1 Buff
+                                                            ered Base Address
+  452 00000000 5C000000 
+                       APB1_NBUF_BASE
+                               EQU              0x5C000000  ; APB Bridge 1 Non-
+                                                            buffered Base Addre
+                                                            ss
+  453 00000000         
+  454 00000000         
+  455 00000000         ;// <e> Setup Library Exception Handlers
+  456 00000000 00000000 
+                       LEH_SETUP
+                               EQU              0
+  457 00000000         ;// </e>
+  458 00000000         
+  459 00000000         
+  460 00000000                 PRESERVE8
+  461 00000000         
+  462 00000000         
+  463 00000000         ; Area Definition and Entry Point
+  464 00000000         ;  Startup Code must be linked first at Address at which
+                        it expects to run.
+
+
+
+ARM Macro Assembler    Page 12 
+
+
+  465 00000000         
+  466 00000000                 AREA             Reset, CODE, READONLY
+  467 00000000                 ARM
+  468 00000000         
+  469 00000000         ; Exception Vectors
+  470 00000000         ;  Mapped to Address 0.
+  471 00000000         ;  Absolute addressing mode must be used.
+  472 00000000         ;  Dummy Handlers are implemented as infinite loops whic
+                       h can be modified.
+  473 00000000         
+  474 00000000         
+  475 00000000         Vectors
+  476 00000000         ;          LDR     PC, Reset_Addr         
+  477 00000000         ;                LDR     PC, Undef_Addr
+  478 00000000         ;                LDR     PC, SWI_Addr
+  479 00000000         ;                LDR     PC, PAbt_Addr
+  480 00000000         ;                LDR     PC, DAbt_Addr
+  481 00000000         ;                NOP                         ; Reserved 
+                       Vector 
+  482 00000000         ;;                LDR     PC, IRQ_Addr
+  483 00000000         ;                LDR     PC, [PC, #-0x0FF0]
+  484 00000000         ;                LDR     PC, FIQ_Addr
+  485 00000000         ;
+  486 00000000         ;                IF      LEH_SETUP <> 0
+  487 00000000         ;                EXTERN  UndefHandler
+  488 00000000         ;                EXTERN  SWIHandler
+  489 00000000         ;                EXTERN  PAbtHandler
+  490 00000000         ;                EXTERN  DAbtHandler
+  491 00000000         ;                EXTERN  IRQHandler
+  492 00000000         ;                EXTERN  FIQHandler
+  493 00000000         ;                ENDIF
+  494 00000000         ;                
+  495 00000000         ;Reset_Addr      DCD     Reset_Handler
+  496 00000000         ;Undef_Addr      DCD     UndefHandler
+  497 00000000         ;SWI_Addr        DCD     SWIHandler
+  498 00000000         ;PAbt_Addr       DCD     PAbtHandler
+  499 00000000         ;DAbt_Addr       DCD     DAbtHandler
+  500 00000000         ;                DCD     0                   ; Reserved 
+                       Address 
+  501 00000000         ;IRQ_Addr        DCD     IRQHandler
+  502 00000000         ;FIQ_Addr        DCD     FIQHandler
+  503 00000000         ;
+  504 00000000         ;                
+  505 00000000         ;                IF      LEH_SETUP = 0
+  506 00000000         ;                
+  507 00000000         ;UndefHandler    B       UndefHandler
+  508 00000000         ;SWIHandler      B       SWIHandler
+  509 00000000         ;PAbtHandler     B       PAbtHandler
+  510 00000000         ;DAbtHandler     B       DAbtHandler
+  511 00000000         ;IRQHandler      B       IRQHandler
+  512 00000000         ;FIQHandler      B       FIQHandler
+  513 00000000         ;
+  514 00000000         ;                ENDIF
+  515 00000000         
+  516 00000000         
+  517 00000000         ; Reset Handler
+  518 00000000         
+  519 00000000                 EXPORT           Reset_Handler
+  520 00000000         Reset_Handler
+
+
+
+ARM Macro Assembler    Page 13 
+
+
+  521 00000000         
+  522 00000000 E1A00000        NOP                          ; Wait for OSC stab
+                                                            ilization
+  523 00000004 E1A00000        NOP
+  524 00000008 E1A00000        NOP
+  525 0000000C E1A00000        NOP
+  526 00000010 E1A00000        NOP
+  527 00000014 E1A00000        NOP
+  528 00000018 E1A00000        NOP
+  529 0000001C E1A00000        NOP
+  530 00000020         
+  531 00000020         
+  532 00000020         ; Setup System Configuration (and SRAM Size)
+  533 00000020         ;                IF      SCR0_SETUP == 1
+  534 00000020         ;
+  535 00000020         ;                LDR     R0, =SCU_BASE
+  536 00000020         ;                LDR     R1, =SCU_SCR0_Val
+  537 00000020         ;                STR     R1, [R0, #SCU_SCR0_OFS]
+  538 00000020         ;                ORR     R1, #0x00000200
+  539 00000020         ;                STR     R1, [R0, #SCU_SCR0_OFS]
+  540 00000020         ;
+  541 00000020         ;                ENDIF
+  542 00000020         ;
+  543 00000020         ;
+  544 00000020         ; Setup Flash Memory Interface (FMI)
+  545 00000020         ;                IF      FMI_SETUP == 1
+  546 00000020         ;
+  547 00000020         ;                LDR     R0, =FMI_BASE
+  548 00000020         ;                LDR     R1, =FMI_BBSR_Val
+  549 00000020         ;                STR     R1, [R0, #FMI_BBSR_OFS]
+  550 00000020         ;                LDR     R1, =FMI_NBBSR_Val
+  551 00000020         ;                STR     R1, [R0, #FMI_NBBSR_OFS]
+  552 00000020         ;                LDR     R1, =(FMI_BBADR_Val:SHR:2)
+  553 00000020         ;                STR     R1, [R0, #FMI_BBADR_OFS]
+  554 00000020         ;                LDR     R1, =(FMI_NBBADR_Val:SHR:2)
+  555 00000020         ;                STR     R1, [R0, #FMI_NBBADR_OFS]
+  556 00000020         ;                LDR     R2, =FMI_CR_Val
+  557 00000020         ;                STR     R2, [R0, #FMI_CR_OFS]
+  558 00000020         ;
+  559 00000020         ;                ; Write "Write flash configuration" com
+                       mand (60h)
+  560 00000020         ;                MOV     R0, R1, LSL #2
+  561 00000020         ;                MOV     R1, #0x60
+  562 00000020         ;                STRH    R1, [R0, #0]
+  563 00000020         ;
+  564 00000020         ;                ; Write "Write flash configuration conf
+                       irm" command (03h)
+  565 00000020         ;                LDR     R2, =(FLASH_CFG_Val:SHL:2)
+  566 00000020         ;                ADD     R0, R0, R2
+  567 00000020         ;                MOV     R1, #0x03
+  568 00000020         ;                STRH    R1, [R0, #0]
+  569 00000020         ;
+  570 00000020         ;                ENDIF
+  571 00000020         ;
+  572 00000020         ;
+  573 00000020         ;; Setup Clock
+  574 00000020         ;                IF      CLOCK_SETUP == 1
+  575 00000020         ;
+  576 00000020         ;                LDR     R0, =SCU_BASE
+
+
+
+ARM Macro Assembler    Page 14 
+
+
+  577 00000020         ;                LDR     R1, =0x00020002
+  578 00000020         ;                STR     R1, [R0, #SCU_CLKCNTR_OFS]    ;
+                        Select OSC as clk src
+  579 00000020         ;
+  580 00000020         ;                NOP     ; Wait for OSC stabilization
+  581 00000020         ;                NOP
+  582 00000020         ;                NOP
+  583 00000020         ;                NOP
+  584 00000020         ;                NOP
+  585 00000020         ;                NOP
+  586 00000020         ;                NOP
+  587 00000020         ;                NOP
+  588 00000020         ;                NOP
+  589 00000020         ;                NOP
+  590 00000020         ;                NOP
+  591 00000020         ;                NOP
+  592 00000020         ;
+  593 00000020         ;                LDR     R1, =0x0003C019               ;
+                        PLL to default
+  594 00000020         ;                STR     R1, [R0, #SCU_PLLCONF_OFS]
+  595 00000020         ;                LDR     R1, =SCU_PLLCONF_Val          ;
+                        PLL to requested value
+  596 00000020         ;                STR     R1, [R0, #SCU_PLLCONF_OFS]
+  597 00000020         ;
+  598 00000020         ;                ; Wait until PLL is stabilized (if PLL 
+                       enabled)
+  599 00000020         ;                IF      (SCU_PLLCONF_Val:AND:0x80000) !
+                       = 0
+  600 00000020         ;PLL_Loop        LDR     R2, [R0, #SCU_SYSSTAT_OFS]
+  601 00000020         ;                ANDS    R2, R2, #SYSSTAT_LOCK
+  602 00000020         ;                BEQ     PLL_Loop
+  603 00000020         ;                ENDIF
+  604 00000020         ;
+  605 00000020         ;                LDR     R1, =SCU_CLKCNTR_Val          ;
+                        Setup clock control
+  606 00000020         ;                STR     R1, [R0, #SCU_CLKCNTR_OFS]
+  607 00000020         ;
+  608 00000020         ;                LDR     R1, =SCU_PCGR0_Val            ;
+                        Enable clock gating
+  609 00000020         ;                STR     R1, [R0, #SCU_PCGR0_OFS]
+  610 00000020         ;                LDR     R1, =SCU_PCGR1_Val
+  611 00000020         ;                STR     R1, [R0, #SCU_PCGR1_OFS]
+  612 00000020         ;
+  613 00000020         ;                ENDIF
+  614 00000020         ;
+  615 00000020         ;
+  616 00000020         ;; Setup Peripheral Reset
+  617 00000020         ;                IF      P_RESET_SETUP != 0
+  618 00000020         ;                LDR     R1, =SCU_PRR0_Val
+  619 00000020         ;                STR     R1, [R0, #SCU_PRR0_OFS]
+  620 00000020         ;                LDR     R1, =SCU_PRR1_Val
+  621 00000020         ;                STR     R1, [R0, #SCU_PRR1_OFS]
+  622 00000020         ;                ENDIF
+  623 00000020         ;
+  624 00000020         
+  625 00000020         ; Setup Stack for each mode
+  626 00000020         
+  627 00000020 E59F004C        LDR              R0, =Stack_Top
+  628 00000024         
+
+
+
+ARM Macro Assembler    Page 15 
+
+
+  629 00000024         ;  Enter Undefined Instruction Mode and set its Stack Po
+                       inter
+  630 00000024 E321F0DB        MSR              CPSR_c, #Mode_UND:OR:I_Bit:OR:F
+_Bit
+  631 00000028 E1A0D000        MOV              SP, R0
+  632 0000002C E2400000        SUB              R0, R0, #UND_Stack_Size
+  633 00000030         
+  634 00000030         ;  Enter Abort Mode and set its Stack Pointer
+  635 00000030 E321F0D7        MSR              CPSR_c, #Mode_ABT:OR:I_Bit:OR:F
+_Bit
+  636 00000034 E1A0D000        MOV              SP, R0
+  637 00000038 E2400000        SUB              R0, R0, #ABT_Stack_Size
+  638 0000003C         
+  639 0000003C         ;  Enter FIQ Mode and set its Stack Pointer
+  640 0000003C E321F0D1        MSR              CPSR_c, #Mode_FIQ:OR:I_Bit:OR:F
+_Bit
+  641 00000040 E1A0D000        MOV              SP, R0
+  642 00000044 E2400000        SUB              R0, R0, #FIQ_Stack_Size
+  643 00000048         
+  644 00000048         ;  Enter IRQ Mode and set its Stack Pointer
+  645 00000048 E321F0D2        MSR              CPSR_c, #Mode_IRQ:OR:I_Bit:OR:F
+_Bit
+  646 0000004C E1A0D000        MOV              SP, R0
+  647 00000050 E2400C01        SUB              R0, R0, #IRQ_Stack_Size
+  648 00000054         
+  649 00000054         ;  Enter Supervisor Mode and set its Stack Pointer
+  650 00000054 E321F0D3        MSR              CPSR_c, #Mode_SVC:OR:I_Bit:OR:F
+_Bit
+  651 00000058 E1A0D000        MOV              SP, R0
+  652 0000005C E2400008        SUB              R0, R0, #SVC_Stack_Size
+  653 00000060         
+  654 00000060         ;  Enter System Mode and set its Stack Pointer
+  655 00000060 E321F0DF        MSR              CPSR_c, #Mode_SYS:OR:I_Bit:OR:F
+_Bit
+  656 00000064                 IF               :DEF:__MICROLIB
+  661 00000064         
+  662 00000064 E1A0D000        MOV              SP, R0
+  663 00000068 E24DAB01        SUB              SL, SP, #USR_Stack_Size
+  664 0000006C         
+  665 0000006C                 ENDIF
+  666 0000006C         
+  667 0000006C         
+  668 0000006C         ; Enter the C code
+  669 0000006C         
+  670 0000006C                 IMPORT           __main
+  671 0000006C E59F0004        LDR              R0, =__main
+  672 00000070 E12FFF10        BX               R0
+  673 00000074         
+  674 00000074                 IF               :DEF:__MICROLIB
+  680 00000074         ; User Initial Stack & Heap
+  681 00000074 00000000 
+              00000000         AREA             |.text|, CODE, READONLY
+  682 00000000         
+  683 00000000                 IMPORT           __use_two_region_memory
+  684 00000000                 EXPORT           __user_initial_stackheap
+  685 00000000         __user_initial_stackheap
+  686 00000000         
+  687 00000000 E59F0044        LDR              R0, =  Heap_Mem
+  688 00000004 E59F1044        LDR              R1, =(Stack_Mem + USR_Stack_Siz
+
+
+
+ARM Macro Assembler    Page 16 
+
+
+e)
+  689 00000008 E59F203C        LDR              R2, = (Heap_Mem +      Heap_Siz
+e)
+  690 0000000C E59F3040        LDR              R3, = Stack_Mem
+  691 00000010 E12FFF1E        BX               LR
+  692 00000014                 ENDIF
+  693 00000014         
+  694 00000014         ; --------------------------------------------
+  695 00000014         ; get ID
+  696 00000014                 EXPORT           CP15_c0_id
+  697 00000014         CP15_c0_id
+  698 00000014 EE100F10        MRC              p15, 0, R0, c0, c0, 0
+  699 00000018 E12FFF1E        BX               LR
+  700 0000001C         
+  701 0000001C         ; get cache
+  702 0000001C                 EXPORT           CP15_c0_cache
+  703 0000001C         CP15_c0_cache
+  704 0000001C EE100F30        MRC              p15, 0, R0, c0, c0, 1
+  705 00000020 E12FFF1E        BX               LR
+  706 00000024         
+  707 00000024         ; TCM status
+  708 00000024                 EXPORT           CP15_c0_tcm
+  709 00000024         CP15_c0_tcm
+  710 00000024 EE100F50        MRC              p15, 0, R0, c0, c0, 2
+  711 00000028 E12FFF1E        BX               LR
+  712 0000002C         
+  713 0000002C         ; Control Register
+  714 0000002C                 EXPORT           CP15_c1
+  715 0000002C         CP15_c1
+  716 0000002C EE110F10        MRC              p15, 0, R0, c1, c0, 0
+  717 00000030 E12FFF1E        BX               LR
+  718 00000034         
+  719 00000034         ; Read TCM region data register c9
+  720 00000034                 EXPORT           CP15_tcm_rd
+  721 00000034         CP15_tcm_rd
+  722 00000034 EE190F11        MRC              p15, 0, R0, c9, c1, 0
+  723 00000038 E12FFF1E        BX               LR
+  724 0000003C         
+  725 0000003C         ; Readn TCM region instruction register
+  726 0000003C                 EXPORT           CP15_tcm_ri
+  727 0000003C         CP15_tcm_ri
+  728 0000003C EE190F31        MRC              p15, 0, R0, c9, c1, 1
+  729 00000040 E12FFF1E        BX               LR
+  730 00000044         
+  731 00000044         ; CP15_c7 register
+  732 00000044                 EXPORT           CP15_c7
+  733 00000044         CP15_c7
+  734 00000044 EE170F90        MRC              p15, 0, R0, c7, c0, 4
+  735 00000048 E12FFF1E        BX               LR
+  736 0000004C         
+  737 0000004C         ; --------------------------------------------
+  738 0000004C         
+  739 0000004C                 END
+              00000000 
+              00000400 
+              00000000 
+Command Line: --debug --xref --device=DARMP3 --apcs=interwork -oMG3500.o -IC:\K
+eil\ARM\INC\ARM --list=MG3500.lst MG3500.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+STACK 00000000
+
+Symbol: STACK
+   Definitions
+      At line 47 in file MG3500.s
+   Uses
+      None
+Comment: STACK unused
+Stack_Mem 00000000
+
+Symbol: Stack_Mem
+   Definitions
+      At line 49 in file MG3500.s
+   Uses
+      At line 688 in file MG3500.s
+      At line 690 in file MG3500.s
+
+Stack_Top 00000508
+
+Symbol: Stack_Top
+   Definitions
+      At line 51 in file MG3500.s
+   Uses
+      At line 627 in file MG3500.s
+Comment: Stack_Top used once
+__initial_sp 00000400
+
+Symbol: __initial_sp
+   Definitions
+      At line 50 in file MG3500.s
+   Uses
+      None
+Comment: __initial_sp unused
+4 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+HEAP 00000000
+
+Symbol: HEAP
+   Definitions
+      At line 60 in file MG3500.s
+   Uses
+      None
+Comment: HEAP unused
+Heap_Mem 00000000
+
+Symbol: Heap_Mem
+   Definitions
+      At line 62 in file MG3500.s
+   Uses
+      At line 687 in file MG3500.s
+      At line 689 in file MG3500.s
+
+__heap_base 00000000
+
+Symbol: __heap_base
+   Definitions
+      At line 61 in file MG3500.s
+   Uses
+      None
+Comment: __heap_base unused
+__heap_limit 00000000
+
+Symbol: __heap_limit
+   Definitions
+      At line 63 in file MG3500.s
+   Uses
+      None
+Comment: __heap_limit unused
+4 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Reset 00000000
+
+Symbol: Reset
+   Definitions
+      At line 466 in file MG3500.s
+   Uses
+      None
+Comment: Reset unused
+Reset_Handler 00000000
+
+Symbol: Reset_Handler
+   Definitions
+      At line 520 in file MG3500.s
+   Uses
+      At line 519 in file MG3500.s
+Comment: Reset_Handler used once
+Vectors 00000000
+
+Symbol: Vectors
+   Definitions
+      At line 475 in file MG3500.s
+   Uses
+      None
+Comment: Vectors unused
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 681 in file MG3500.s
+   Uses
+      None
+Comment: .text unused
+CP15_c0_cache 0000001C
+
+Symbol: CP15_c0_cache
+   Definitions
+      At line 703 in file MG3500.s
+   Uses
+      At line 702 in file MG3500.s
+Comment: CP15_c0_cache used once
+CP15_c0_id 00000014
+
+Symbol: CP15_c0_id
+   Definitions
+      At line 697 in file MG3500.s
+   Uses
+      At line 696 in file MG3500.s
+Comment: CP15_c0_id used once
+CP15_c0_tcm 00000024
+
+Symbol: CP15_c0_tcm
+   Definitions
+      At line 709 in file MG3500.s
+   Uses
+      At line 708 in file MG3500.s
+Comment: CP15_c0_tcm used once
+CP15_c1 0000002C
+
+Symbol: CP15_c1
+   Definitions
+      At line 715 in file MG3500.s
+   Uses
+      At line 714 in file MG3500.s
+Comment: CP15_c1 used once
+CP15_c7 00000044
+
+Symbol: CP15_c7
+   Definitions
+      At line 733 in file MG3500.s
+   Uses
+      At line 732 in file MG3500.s
+Comment: CP15_c7 used once
+CP15_tcm_rd 00000034
+
+Symbol: CP15_tcm_rd
+   Definitions
+      At line 721 in file MG3500.s
+   Uses
+      At line 720 in file MG3500.s
+Comment: CP15_tcm_rd used once
+CP15_tcm_ri 0000003C
+
+Symbol: CP15_tcm_ri
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 727 in file MG3500.s
+   Uses
+      At line 726 in file MG3500.s
+Comment: CP15_tcm_ri used once
+__user_initial_stackheap 00000000
+
+Symbol: __user_initial_stackheap
+   Definitions
+      At line 685 in file MG3500.s
+   Uses
+      At line 684 in file MG3500.s
+Comment: __user_initial_stackheap used once
+9 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.debug_info$$$Reset 00000000
+
+Symbol: .debug_info$$$Reset
+   Definitions
+      None
+   Uses
+      None
+Warning: .debug_info$$$Reset undefinedComment: .debug_info$$$Reset unused
+1 symbol
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.debug_line$$$Reset 00000000
+
+Symbol: .debug_line$$$Reset
+   Definitions
+      None
+   Uses
+      None
+Warning: .debug_line$$$Reset undefinedComment: .debug_line$$$Reset unused
+1 symbol
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.debug_info$$$.text 00000000
+
+Symbol: .debug_info$$$.text
+   Definitions
+      None
+   Uses
+      None
+Warning: .debug_info$$$.text undefinedComment: .debug_info$$$.text unused
+1 symbol
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.debug_line$$$.text 00000000
+
+Symbol: .debug_line$$$.text
+   Definitions
+      None
+   Uses
+      None
+Warning: .debug_line$$$.text undefinedComment: .debug_line$$$.text unused
+1 symbol
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.debug_abbrev 00000000
+
+Symbol: .debug_abbrev
+   Definitions
+      None
+   Uses
+      None
+Warning: .debug_abbrev undefinedComment: .debug_abbrev unused
+__ARM_asm.debug_abbrev 00000000
+
+Symbol: __ARM_asm.debug_abbrev
+   Definitions
+      None
+   Uses
+      None
+Warning: __ARM_asm.debug_abbrev undefinedComment: __ARM_asm.debug_abbrev unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+ABT_Stack_Size 00000000
+
+Symbol: ABT_Stack_Size
+   Definitions
+      At line 39 in file MG3500.s
+   Uses
+      At line 45 in file MG3500.s
+      At line 637 in file MG3500.s
+
+APB0_BUF_BASE 48001802
+
+Symbol: APB0_BUF_BASE
+   Definitions
+      At line 449 in file MG3500.s
+   Uses
+      None
+Comment: APB0_BUF_BASE unused
+APB0_NBUF_BASE 58000000
+
+Symbol: APB0_NBUF_BASE
+   Definitions
+      At line 450 in file MG3500.s
+   Uses
+      None
+Comment: APB0_NBUF_BASE unused
+APB1_BUF_BASE 4C000000
+
+Symbol: APB1_BUF_BASE
+   Definitions
+      At line 451 in file MG3500.s
+   Uses
+      None
+Comment: APB1_BUF_BASE unused
+APB1_NBUF_BASE 5C000000
+
+Symbol: APB1_NBUF_BASE
+   Definitions
+      At line 452 in file MG3500.s
+   Uses
+      None
+Comment: APB1_NBUF_BASE unused
+CLOCK_SETUP 00000000
+
+Symbol: CLOCK_SETUP
+   Definitions
+      At line 328 in file MG3500.s
+   Uses
+      None
+Comment: CLOCK_SETUP unused
+FIQ_Stack_Size 00000000
+
+Symbol: FIQ_Stack_Size
+   Definitions
+      At line 40 in file MG3500.s
+   Uses
+      At line 45 in file MG3500.s
+      At line 642 in file MG3500.s
+
+FLASH_CFG_Val 00000000
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+
+Symbol: FLASH_CFG_Val
+   Definitions
+      At line 165 in file MG3500.s
+   Uses
+      None
+Comment: FLASH_CFG_Val unused
+FMI_BASE 54000000
+
+Symbol: FMI_BASE
+   Definitions
+      At line 83 in file MG3500.s
+   Uses
+      None
+Comment: FMI_BASE unused
+FMI_BBADR_OFS 0000000C
+
+Symbol: FMI_BBADR_OFS
+   Definitions
+      At line 86 in file MG3500.s
+   Uses
+      None
+Comment: FMI_BBADR_OFS unused
+FMI_BBADR_Val 00000000
+
+Symbol: FMI_BBADR_Val
+   Definitions
+      At line 162 in file MG3500.s
+   Uses
+      None
+Comment: FMI_BBADR_Val unused
+FMI_BBSR_OFS 00000000
+
+Symbol: FMI_BBSR_OFS
+   Definitions
+      At line 84 in file MG3500.s
+   Uses
+      None
+Comment: FMI_BBSR_OFS unused
+FMI_BBSR_Val 00000004
+
+Symbol: FMI_BBSR_Val
+   Definitions
+      At line 161 in file MG3500.s
+   Uses
+      None
+Comment: FMI_BBSR_Val unused
+FMI_CR_OFS 00000018
+
+Symbol: FMI_CR_OFS
+   Definitions
+      At line 88 in file MG3500.s
+   Uses
+      None
+Comment: FMI_CR_OFS unused
+FMI_CR_Val 00000018
+
+Symbol: FMI_CR_Val
+   Definitions
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Absolute symbols
+
+      At line 160 in file MG3500.s
+   Uses
+      None
+Comment: FMI_CR_Val unused
+FMI_NBBADR_OFS 00000010
+
+Symbol: FMI_NBBADR_OFS
+   Definitions
+      At line 87 in file MG3500.s
+   Uses
+      None
+Comment: FMI_NBBADR_OFS unused
+FMI_NBBADR_Val 00400000
+
+Symbol: FMI_NBBADR_Val
+   Definitions
+      At line 164 in file MG3500.s
+   Uses
+      None
+Comment: FMI_NBBADR_Val unused
+FMI_NBBSR_OFS 00000004
+
+Symbol: FMI_NBBSR_OFS
+   Definitions
+      At line 85 in file MG3500.s
+   Uses
+      None
+Comment: FMI_NBBSR_OFS unused
+FMI_NBBSR_Val 00000002
+
+Symbol: FMI_NBBSR_Val
+   Definitions
+      At line 163 in file MG3500.s
+   Uses
+      None
+Comment: FMI_NBBSR_Val unused
+FMI_SETUP 00000000
+
+Symbol: FMI_SETUP
+   Definitions
+      At line 159 in file MG3500.s
+   Uses
+      None
+Comment: FMI_SETUP unused
+F_Bit 00000040
+
+Symbol: F_Bit
+   Definitions
+      At line 25 in file MG3500.s
+   Uses
+      At line 630 in file MG3500.s
+      At line 635 in file MG3500.s
+      At line 640 in file MG3500.s
+      At line 645 in file MG3500.s
+      At line 650 in file MG3500.s
+      At line 655 in file MG3500.s
+
+Heap_Size 00000000
+
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Absolute symbols
+
+Symbol: Heap_Size
+   Definitions
+      At line 58 in file MG3500.s
+   Uses
+      At line 62 in file MG3500.s
+      At line 689 in file MG3500.s
+
+IRQ_Stack_Size 00000100
+
+Symbol: IRQ_Stack_Size
+   Definitions
+      At line 41 in file MG3500.s
+   Uses
+      At line 45 in file MG3500.s
+      At line 647 in file MG3500.s
+
+ISR_Stack_Size 00000108
+
+Symbol: ISR_Stack_Size
+   Definitions
+      At line 45 in file MG3500.s
+   Uses
+      At line 50 in file MG3500.s
+Comment: ISR_Stack_Size used once
+I_Bit 00000080
+
+Symbol: I_Bit
+   Definitions
+      At line 24 in file MG3500.s
+   Uses
+      At line 630 in file MG3500.s
+      At line 635 in file MG3500.s
+      At line 640 in file MG3500.s
+      At line 645 in file MG3500.s
+      At line 650 in file MG3500.s
+      At line 655 in file MG3500.s
+
+LEH_SETUP 00000000
+
+Symbol: LEH_SETUP
+   Definitions
+      At line 456 in file MG3500.s
+   Uses
+      None
+Comment: LEH_SETUP unused
+Mode_ABT 00000017
+
+Symbol: Mode_ABT
+   Definitions
+      At line 20 in file MG3500.s
+   Uses
+      At line 635 in file MG3500.s
+Comment: Mode_ABT used once
+Mode_FIQ 00000011
+
+Symbol: Mode_FIQ
+   Definitions
+      At line 17 in file MG3500.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Absolute symbols
+
+      At line 640 in file MG3500.s
+Comment: Mode_FIQ used once
+Mode_IRQ 00000012
+
+Symbol: Mode_IRQ
+   Definitions
+      At line 18 in file MG3500.s
+   Uses
+      At line 645 in file MG3500.s
+Comment: Mode_IRQ used once
+Mode_SVC 00000013
+
+Symbol: Mode_SVC
+   Definitions
+      At line 19 in file MG3500.s
+   Uses
+      At line 650 in file MG3500.s
+Comment: Mode_SVC used once
+Mode_SYS 0000001F
+
+Symbol: Mode_SYS
+   Definitions
+      At line 22 in file MG3500.s
+   Uses
+      At line 655 in file MG3500.s
+Comment: Mode_SYS used once
+Mode_UND 0000001B
+
+Symbol: Mode_UND
+   Definitions
+      At line 21 in file MG3500.s
+   Uses
+      At line 630 in file MG3500.s
+Comment: Mode_UND used once
+Mode_USR 00000010
+
+Symbol: Mode_USR
+   Definitions
+      At line 16 in file MG3500.s
+   Uses
+      None
+Comment: Mode_USR unused
+P_RESET_SETUP 00000000
+
+Symbol: P_RESET_SETUP
+   Definitions
+      At line 443 in file MG3500.s
+   Uses
+      None
+Comment: P_RESET_SETUP unused
+SCR0_SETUP 00000000
+
+Symbol: SCR0_SETUP
+   Definitions
+      At line 78 in file MG3500.s
+   Uses
+      None
+Comment: SCR0_SETUP unused
+SCU_BASE 5C002000
+
+
+
+ARM Macro Assembler    Page 6 Alphabetic symbol ordering
+Absolute symbols
+
+
+Symbol: SCU_BASE
+   Definitions
+      At line 169 in file MG3500.s
+   Uses
+      None
+Comment: SCU_BASE unused
+SCU_CLKCNTR_OFS 00000000
+
+Symbol: SCU_CLKCNTR_OFS
+   Definitions
+      At line 170 in file MG3500.s
+   Uses
+      None
+Comment: SCU_CLKCNTR_OFS unused
+SCU_CLKCNTR_Val 00020000
+
+Symbol: SCU_CLKCNTR_Val
+   Definitions
+      At line 329 in file MG3500.s
+   Uses
+      None
+Comment: SCU_CLKCNTR_Val unused
+SCU_PCGR0_OFS 00000014
+
+Symbol: SCU_PCGR0_OFS
+   Definitions
+      At line 173 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PCGR0_OFS unused
+SCU_PCGR0_Val 000000DB
+
+Symbol: SCU_PCGR0_Val
+   Definitions
+      At line 331 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PCGR0_Val unused
+SCU_PCGR1_OFS 00000018
+
+Symbol: SCU_PCGR1_OFS
+   Definitions
+      At line 174 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PCGR1_OFS unused
+SCU_PCGR1_Val 00C40800
+
+Symbol: SCU_PCGR1_Val
+   Definitions
+      At line 332 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PCGR1_Val unused
+SCU_PLLCONF_OFS 00000004
+
+Symbol: SCU_PLLCONF_OFS
+   Definitions
+
+
+
+ARM Macro Assembler    Page 7 Alphabetic symbol ordering
+Absolute symbols
+
+      At line 171 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PLLCONF_OFS unused
+SCU_PLLCONF_Val 000BC019
+
+Symbol: SCU_PLLCONF_Val
+   Definitions
+      At line 330 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PLLCONF_Val unused
+SCU_PRR0_OFS 0000001C
+
+Symbol: SCU_PRR0_OFS
+   Definitions
+      At line 175 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PRR0_OFS unused
+SCU_PRR0_Val 00001073
+
+Symbol: SCU_PRR0_Val
+   Definitions
+      At line 444 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PRR0_Val unused
+SCU_PRR1_OFS 00000020
+
+Symbol: SCU_PRR1_OFS
+   Definitions
+      At line 176 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PRR1_OFS unused
+SCU_PRR1_Val 00C40800
+
+Symbol: SCU_PRR1_Val
+   Definitions
+      At line 445 in file MG3500.s
+   Uses
+      None
+Comment: SCU_PRR1_Val unused
+SCU_SCR0_OFS 00000034
+
+Symbol: SCU_SCR0_OFS
+   Definitions
+      At line 177 in file MG3500.s
+   Uses
+      None
+Comment: SCU_SCR0_OFS unused
+SCU_SCR0_Val 00000196
+
+Symbol: SCU_SCR0_Val
+   Definitions
+      At line 79 in file MG3500.s
+   Uses
+      None
+
+
+
+ARM Macro Assembler    Page 8 Alphabetic symbol ordering
+Absolute symbols
+
+Comment: SCU_SCR0_Val unused
+SCU_SYSSTAT_OFS 00000008
+
+Symbol: SCU_SYSSTAT_OFS
+   Definitions
+      At line 172 in file MG3500.s
+   Uses
+      None
+Comment: SCU_SYSSTAT_OFS unused
+SVC_Stack_Size 00000008
+
+Symbol: SVC_Stack_Size
+   Definitions
+      At line 38 in file MG3500.s
+   Uses
+      At line 45 in file MG3500.s
+      At line 652 in file MG3500.s
+
+SYSSTAT_LOCK 00000001
+
+Symbol: SYSSTAT_LOCK
+   Definitions
+      At line 180 in file MG3500.s
+   Uses
+      None
+Comment: SYSSTAT_LOCK unused
+UND_Stack_Size 00000000
+
+Symbol: UND_Stack_Size
+   Definitions
+      At line 37 in file MG3500.s
+   Uses
+      At line 45 in file MG3500.s
+      At line 632 in file MG3500.s
+
+USR_Stack_Size 00000400
+
+Symbol: USR_Stack_Size
+   Definitions
+      At line 42 in file MG3500.s
+   Uses
+      At line 49 in file MG3500.s
+      At line 663 in file MG3500.s
+      At line 688 in file MG3500.s
+
+55 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 670 in file MG3500.s
+   Uses
+      At line 671 in file MG3500.s
+Comment: __main used once
+__use_two_region_memory 00000000
+
+Symbol: __use_two_region_memory
+   Definitions
+      At line 683 in file MG3500.s
+   Uses
+      None
+Comment: __use_two_region_memory unused
+2 symbols
+406 symbols in table
